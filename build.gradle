@@ -6,13 +6,13 @@ buildscript {
 
 plugins {
     id "org.jetbrains.kotlin.jvm" version "1.5.31"
+    id("maven-publish")
 }
 
 allprojects {
-    apply from: "$rootDir/ktlint.gradle"
 
-    group 'com.github.kotlintelegrambot'
-    version '0.3.4'
+    group 'ru.zagirnur'
+    version '1.0.2'
 
     repositories {
         mavenCentral()
@@ -21,4 +21,27 @@ allprojects {
 
 repositories {
     mavenCentral()
+}
+
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: "maven-publish"
+    publishing {
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/zagirnur/kotlin-telegram-bot")
+                credentials {
+                    username = project.findProperty("gpr.user") ?: System.getenv("MAVEN_USERNAME")
+                    password = project.findProperty("gpr.key") ?: System.getenv("MAVEN_PASSWORD")
+                }
+            }
+        }
+        publications {
+            gpr(MavenPublication) {
+                from(components.java)
+            }
+        }
+    }
 }

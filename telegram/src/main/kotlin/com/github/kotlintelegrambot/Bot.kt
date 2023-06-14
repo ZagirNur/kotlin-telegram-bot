@@ -668,6 +668,7 @@ class Bot private constructor(
         replyMarkup
     )
 
+    @Suppress("DEPRECATION")
     @Deprecated("Use overloaded version instead")
     fun sendAnimation(
         chatId: ChatId,
