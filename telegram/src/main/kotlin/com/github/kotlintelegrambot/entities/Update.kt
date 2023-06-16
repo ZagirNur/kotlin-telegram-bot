@@ -56,7 +56,7 @@ data class Update constructor(
         val redirection = this.redirection
         this.redirection = null
         this.redirected = true
-        return redirection?: Redirection()
+        return redirection ?: Redirection()
     }
 
 }
@@ -81,18 +81,8 @@ fun Update.getStartPayload(delimiter: String = "-"): List<Pair<String, String>> 
 }
 
 val Update.fromId
-    get() = ChatId.fromId(
-        message?.from?.id
-            ?: editedMessage?.from?.id
-            ?: channelPost?.from?.id
-            ?: editedChannelPost?.from?.id
-            ?: inlineQuery?.from?.id
-            ?: chosenInlineResult?.from?.id
-            ?: callbackQuery?.from?.id
-            ?: shippingQuery?.from?.id
-            ?: preCheckoutQuery?.from?.id
-            ?: pollAnswer?.user?.id ?: throw IllegalArgumentException("Update has no user id, update: $this")
-    )
+    get() = ChatId.fromId(from.id)
+
 val Update.messageId
     get() =
         message?.messageId
@@ -102,16 +92,7 @@ val Update.messageId
             ?: callbackQuery?.message?.messageId
 
 val Update.fromUsername
-    get() = message?.from?.username
-        ?: editedMessage?.from?.username
-        ?: channelPost?.from?.username
-        ?: editedChannelPost?.from?.username
-        ?: inlineQuery?.from?.username
-        ?: chosenInlineResult?.from?.username
-        ?: callbackQuery?.from?.username
-        ?: shippingQuery?.from?.username
-        ?: preCheckoutQuery?.from?.username
-        ?: pollAnswer?.user?.username ?: throw IllegalStateException("Update has no username, update: $this")
+    get() = from.username
 
 val Update.from
     get() =
@@ -124,20 +105,20 @@ val Update.from
             ?: callbackQuery?.from
             ?: shippingQuery?.from
             ?: preCheckoutQuery?.from
-            ?: pollAnswer?.user ?: throw IllegalStateException(
-                "Update has no user id, update: $this"
-            )
+            ?: pollAnswer?.user
+            ?: throw IllegalStateException("Update has no user id, update: $this")
 
 val Update.chatId
-    get() = ChatId.fromId(
-        message?.chat?.id
-            ?: editedMessage?.chat?.id
-            ?: channelPost?.chat?.id
-            ?: editedChannelPost?.chat?.id
-            ?: callbackQuery?.message?.chat?.id
-            ?: pollAnswer?.user?.id ?: throw IllegalStateException("Update has no chat id, update: $this")
-    )
+    get() = ChatId.fromId(chat.id)
 
+val Update.chat
+    get() =
+        message?.chat
+            ?: editedMessage?.chat
+            ?: channelPost?.chat
+            ?: editedChannelPost?.chat
+            ?: callbackQuery?.message?.chat
+            ?: throw IllegalStateException("Update has no chat id, update: $this")
 
 
 val Update.isPrivateChat

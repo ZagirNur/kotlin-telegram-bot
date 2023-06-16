@@ -2,6 +2,7 @@ package com.github.kotlintelegrambot.extensions.filters
 
 import com.github.kotlintelegrambot.dispatcher.ChatContext
 import com.github.kotlintelegrambot.entities.Update
+import com.github.kotlintelegrambot.entities.chat
 
 interface Filter {
     fun checkFor(update: Update): Boolean = update.predicate()
@@ -46,7 +47,11 @@ interface Filter {
             && message.text == text
     }
 
-    class Command(
+    object Command : Filter {
+        override fun Update.predicate(): Boolean = message?.text != null && message.text.startsWith("/")
+    }
+
+    class CommandIs(
         private val command: String
     ) : Filter {
         override fun Update.predicate(): Boolean {
@@ -99,7 +104,7 @@ interface Filter {
     }
 
     class Chat(private val chatId: Long) : Filter {
-        override fun Update.predicate(): Boolean = message?.chat?.id == chatId
+        override fun Update.predicate(): Boolean = message?.chat?.id == this@Chat.chatId
     }
 
     class User(private val userId: Long) : Filter {
@@ -116,6 +121,6 @@ interface Filter {
     }
 
     object Channel : Filter {
-        override fun Update.predicate(): Boolean = channelPost?.chat?.type == "channel"
+        override fun Update.predicate(): Boolean = chat.type == "channel"
     }
 }
