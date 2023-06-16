@@ -6,6 +6,7 @@ import com.github.kotlintelegrambot.dispatcher.handlers.Handler
 import com.github.kotlintelegrambot.dispatcher.new.buildRedirectedUpdate
 import com.github.kotlintelegrambot.entities.Update
 import com.github.kotlintelegrambot.errors.TelegramError
+import com.github.kotlintelegrambot.extensions.filters.Filter
 import com.github.kotlintelegrambot.logging.LogLevel
 import com.github.kotlintelegrambot.types.DispatchableObject
 import kotlinx.coroutines.*
@@ -16,7 +17,7 @@ open class Dispatcher<Ctx> internal constructor(
     private val logLevel: LogLevel,
     coroutineDispatcher: CoroutineDispatcher,
     val chatContextProvider: ChatContextProvider,
-) {
+) : HandleCollector<Ctx> {
 
     internal lateinit var bot: Bot
 
@@ -42,7 +43,30 @@ open class Dispatcher<Ctx> internal constructor(
         }
     }
 
-    fun addHandler(handler: Handler) {
+    fun on(filter: Filter, func: HandleCollector<Ctx>.() -> Unit) {
+        val filterHandler = object : HandleCollector<Ctx> {
+            override fun addHandler(handler: Handler) {
+                commandHandlers.add(
+                    object : Handler {
+                        override fun checkUpdate(update: Update): Boolean {
+                            return filter.checkFor(update) && handler.checkUpdate(update)
+                        }
+
+                        override suspend fun handleUpdate(bot: Bot, update: Update) {
+                            handler.handleUpdate(bot, update)
+                        }
+                    }
+                )
+            }
+
+            override fun addErrorHandler(errorHandler: ErrorHandler) {
+                throw UnsupportedOperationException("Error handlers are not supported for filters")
+            }
+        }
+        func(filterHandler)
+    }
+
+    override fun addHandler(handler: Handler) {
         commandHandlers.add(handler)
     }
 
@@ -50,7 +74,7 @@ open class Dispatcher<Ctx> internal constructor(
         commandHandlers.remove(handler)
     }
 
-    fun addErrorHandler(errorHandler: ErrorHandler) {
+    override fun addErrorHandler(errorHandler: ErrorHandler) {
         errorHandlers.add(errorHandler)
     }
 
