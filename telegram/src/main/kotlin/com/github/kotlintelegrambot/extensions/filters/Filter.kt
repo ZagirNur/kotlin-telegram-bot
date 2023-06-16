@@ -1,99 +1,121 @@
 package com.github.kotlintelegrambot.extensions.filters
 
-import com.github.kotlintelegrambot.entities.Message
+import com.github.kotlintelegrambot.dispatcher.ChatContext
+import com.github.kotlintelegrambot.entities.Update
 
 interface Filter {
-    fun checkFor(message: Message): Boolean = message.predicate()
-    fun Message.predicate(): Boolean
+    fun checkFor(update: Update): Boolean = update.predicate()
+    fun Update.predicate(): Boolean = false
+
 
     infix fun and(otherFilter: Filter): Filter = object : Filter {
-        override fun Message.predicate(): Boolean =
+        override fun Update.predicate(): Boolean =
             this@Filter.checkFor(this) && otherFilter.checkFor(this)
     }
 
     infix fun or(otherFilter: Filter): Filter = object : Filter {
-        override fun Message.predicate(): Boolean =
+        override fun Update.predicate(): Boolean =
             this@Filter.checkFor(this) || otherFilter.checkFor(this)
     }
 
     operator fun not(): Filter = object : Filter {
-        override fun Message.predicate(): Boolean = !this@Filter.checkFor(this)
+        override fun Update.predicate(): Boolean = !this@Filter.checkFor(this)
     }
 
-    class Custom(private val customPredicate: Message.() -> Boolean) : Filter {
-        override fun Message.predicate(): Boolean = customPredicate()
+    class Custom(private val customPredicate: Update.() -> Boolean) : Filter {
+        override fun Update.predicate(): Boolean = customPredicate()
+    }
+
+    open class ContextHas<T : ChatContext>(private val customPredicate: T.() -> Boolean) : Filter {
+        override fun Update.predicate(): Boolean {
+            val chatContext = chatContextSource().getChatContext<T>()
+            return chatContext.customPredicate()
+        }
     }
 
     object All : Filter {
-        override fun Message.predicate(): Boolean = true
+        override fun Update.predicate(): Boolean = true
     }
 
     object Text : Filter {
-        override fun Message.predicate(): Boolean = text != null && !text.startsWith("/")
+        override fun Update.predicate(): Boolean = message?.text != null && !message.text.startsWith("/")
     }
 
-    object Command : Filter {
-        override fun Message.predicate(): Boolean = text != null && text.startsWith("/")
+    class TextIs(private val text: String) : Filter {
+        override fun Update.predicate(): Boolean = message?.text != null
+            && message.text == text
+    }
+
+    class Command(
+        private val command: String
+    ) : Filter {
+        override fun Update.predicate(): Boolean {
+            return message?.text != null && message.text.startsWith("/$command")
+        }
     }
 
     object Reply : Filter {
-        override fun Message.predicate(): Boolean = replyToMessage != null
+        override fun Update.predicate(): Boolean = message?.replyToMessage != null
     }
 
     object Forward : Filter {
-        override fun Message.predicate(): Boolean = forwardDate != null
+        override fun Update.predicate(): Boolean = message?.forwardDate != null
     }
 
     object Audio : Filter {
-        override fun Message.predicate(): Boolean = audio != null
+        override fun Update.predicate(): Boolean = message?.audio != null
     }
 
     object Photo : Filter {
-        override fun Message.predicate(): Boolean = photo != null && photo.isNotEmpty()
+        override fun Update.predicate(): Boolean = message?.photo != null && message.photo.isNotEmpty()
     }
 
     object Sticker : Filter {
-        override fun Message.predicate(): Boolean = sticker != null
+        override fun Update.predicate(): Boolean = message?.sticker != null
     }
 
     object Video : Filter {
-        override fun Message.predicate(): Boolean = video != null
+        override fun Update.predicate(): Boolean = message?.video != null
     }
 
     object VideoNote : Filter {
-        override fun Message.predicate(): Boolean = videoNote != null
+        override fun Update.predicate(): Boolean = message?.videoNote != null
     }
 
     object Location : Filter {
-        override fun Message.predicate(): Boolean = location != null
+        override fun Update.predicate(): Boolean = message?.location != null
     }
 
     object Contact : Filter {
-        override fun Message.predicate(): Boolean = contact != null
+        override fun Update.predicate(): Boolean = message?.contact != null
     }
 
     object Invoice : Filter {
-        override fun Message.predicate(): Boolean = invoice != null
+        override fun Update.predicate(): Boolean = message?.invoice != null
+    }
+
+    object Button : Filter {
+        override fun Update.predicate(): Boolean = callbackQuery?.data != null
     }
 
     class Chat(private val chatId: Long) : Filter {
-        override fun Message.predicate(): Boolean = chat.id == chatId
+        override fun Update.predicate(): Boolean = message?.chat?.id == chatId
     }
 
     class User(private val userId: Long) : Filter {
-        override fun Message.predicate(): Boolean = from?.id == userId
+        override fun Update.predicate(): Boolean = message?.from?.id == userId
     }
 
     object Group : Filter {
-        override fun Message.predicate(): Boolean =
-            chat.type == "group" || chat.type == "supergroup"
+        override fun Update.predicate(): Boolean =
+            message?.chat?.type == "group" || message?.chat?.type == "supergroup"
     }
 
     object Private : Filter {
-        override fun Message.predicate(): Boolean = chat.type == "private"
+        override fun Update.predicate(): Boolean = message?.chat?.type == "private"
     }
 
     object Channel : Filter {
-        override fun Message.predicate(): Boolean = chat.type == "channel"
+        override fun Update.predicate(): Boolean = channelPost?.chat?.type == "channel"
     }
 }

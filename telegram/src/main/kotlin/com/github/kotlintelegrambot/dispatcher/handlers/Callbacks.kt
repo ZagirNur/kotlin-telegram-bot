@@ -2,13 +2,7 @@ package com.github.kotlintelegrambot.dispatcher.handlers
 
 import com.github.kotlintelegrambot.dispatcher.handlers.media.MediaHandlerEnvironment
 import com.github.kotlintelegrambot.entities.Game
-import com.github.kotlintelegrambot.entities.files.Animation
-import com.github.kotlintelegrambot.entities.files.Audio
-import com.github.kotlintelegrambot.entities.files.Document
-import com.github.kotlintelegrambot.entities.files.PhotoSize
-import com.github.kotlintelegrambot.entities.files.Video
-import com.github.kotlintelegrambot.entities.files.VideoNote
-import com.github.kotlintelegrambot.entities.files.Voice
+import com.github.kotlintelegrambot.entities.files.*
 import com.github.kotlintelegrambot.entities.stickers.Sticker
 
 typealias HandleError = ErrorHandlerEnvironment.() -> Unit
@@ -33,3 +27,10 @@ typealias HandleSticker = suspend MediaHandlerEnvironment<Sticker>.() -> Unit
 typealias HandleVideo = suspend MediaHandlerEnvironment<Video>.() -> Unit
 typealias HandleVoice = suspend MediaHandlerEnvironment<Voice>.() -> Unit
 typealias HandleVideoNote = suspend MediaHandlerEnvironment<VideoNote>.() -> Unit
+
+
+//typealias HandleParameterizedCallbackQuery<T> = ParameterizedCallbackQueryHandlerEnvironment<T>.() -> Unit
+
+typealias HandleUpdate<T> = suspend UpdateContext<T>.() -> Unit
+typealias HandleUpdateAndFinish<T> = suspend UpdateContext<T>.() -> Boolean
+typealias HandleButtonUpdate<T, A> = suspend UpdateButtonContext<T, A>.() -> Unit

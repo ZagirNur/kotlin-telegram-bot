@@ -3,21 +3,19 @@ package com.github.kotlintelegrambot.dispatcher
 import com.github.kotlintelegrambot.Bot
 import com.github.kotlintelegrambot.dispatcher.handlers.ErrorHandler
 import com.github.kotlintelegrambot.dispatcher.handlers.Handler
+import com.github.kotlintelegrambot.dispatcher.new.buildRedirectedUpdate
 import com.github.kotlintelegrambot.entities.Update
 import com.github.kotlintelegrambot.errors.TelegramError
 import com.github.kotlintelegrambot.logging.LogLevel
 import com.github.kotlintelegrambot.types.DispatchableObject
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 
-class Dispatcher internal constructor(
+open class Dispatcher<Ctx> internal constructor(
     private val updatesChannel: Channel<DispatchableObject>,
     private val logLevel: LogLevel,
     coroutineDispatcher: CoroutineDispatcher,
+    val chatContextProvider: ChatContextProvider,
 ) {
 
     internal lateinit var bot: Bot
@@ -61,6 +59,10 @@ class Dispatcher internal constructor(
     }
 
     private suspend fun handleUpdate(update: Update) {
+
+        val chatStateProvider = wrapAsChatContextSource(update, chatContextProvider)
+        update.withChatContextSource(chatStateProvider)
+
         commandHandlers
             .asSequence()
             .filter { !update.consumed }
@@ -68,6 +70,12 @@ class Dispatcher internal constructor(
             .forEach {
                 try {
                     it.handleUpdate(bot, update)
+                    chatStateProvider.flush()
+
+                    if (update.hasRedirection()) {
+                        handleUpdate(buildRedirectedUpdate(update))
+                        return
+                    }
                 } catch (throwable: Throwable) {
                     if (logLevel.shouldLogErrors()) {
                         throwable.printStackTrace()

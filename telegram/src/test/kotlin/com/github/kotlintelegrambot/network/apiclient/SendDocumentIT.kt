@@ -67,7 +67,8 @@ class SendDocumentIT : ApiClientIT() {
             disableNotification = false,
             replyToMessageId = REPLY_TO_MESSAGE_ID,
             allowSendingWithoutReply = null,
-            replyMarkup = REPLY_MARKUP
+            replyMarkup = REPLY_MARKUP,
+            mimeType = "application/pdf"
         ).execute()
 
         val request = mockWebServer.takeRequest()
@@ -88,7 +89,10 @@ class SendDocumentIT : ApiClientIT() {
 
         sut.sendDocument(
             ChatId.fromId(ANY_CHAT_ID),
-            TelegramFile.ByByteArray(getFileFromResources<SendDocumentIT>(DOCUMENT_FILE_NAME).readBytes(), DOCUMENT_FILE_NAME),
+            TelegramFile.ByByteArray(
+                getFileFromResources<SendDocumentIT>(DOCUMENT_FILE_NAME).readBytes(),
+                DOCUMENT_FILE_NAME
+            ),
             caption = CAPTION,
             parseMode = MARKDOWN_V2,
             disableContentTypeDetection = false,

@@ -1,8 +1,10 @@
 import com.github.kotlintelegrambot.Bot
+import com.github.kotlintelegrambot.dispatcher.ChatContext
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
 import com.github.kotlintelegrambot.dispatcher.handlers.HandleText
 import com.github.kotlintelegrambot.dispatcher.handlers.Handler
 import com.github.kotlintelegrambot.dispatcher.handlers.TextHandler
+import com.github.kotlintelegrambot.dispatcher.new.EmptyChatContextProvider
 import com.github.kotlintelegrambot.logging.LogLevel
 import com.github.kotlintelegrambot.types.DispatchableObject
 import io.mockk.coEvery
@@ -25,10 +27,11 @@ class DispatcherTest {
     private val botMock = mockk<Bot>()
     private val channelMock = mockk<Channel<DispatchableObject>>()
 
-    private fun createDispatcher(coroutineDispatcher: CoroutineDispatcher) = Dispatcher(
+    private fun createDispatcher(coroutineDispatcher: CoroutineDispatcher) = Dispatcher<ChatContext>(
         channelMock,
         LogLevel.None,
         coroutineDispatcher,
+        EmptyChatContextProvider()
     ).apply {
         bot = botMock
     }

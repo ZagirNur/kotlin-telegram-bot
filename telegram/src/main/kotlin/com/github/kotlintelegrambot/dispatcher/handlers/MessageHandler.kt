@@ -20,7 +20,7 @@ internal class MessageHandler(
         if (update.message == null) {
             false
         } else {
-            filter.checkFor(update.message)
+            filter.checkFor(update)
         }
 
     override suspend fun handleUpdate(bot: Bot, update: Update) {

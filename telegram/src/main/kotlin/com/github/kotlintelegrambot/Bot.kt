@@ -1,6 +1,9 @@
 package com.github.kotlintelegrambot
 
+import com.github.kotlintelegrambot.dispatcher.ChatContext
+import com.github.kotlintelegrambot.dispatcher.ChatContextProvider
 import com.github.kotlintelegrambot.dispatcher.Dispatcher
+import com.github.kotlintelegrambot.dispatcher.new.EmptyChatContextProvider
 import com.github.kotlintelegrambot.entities.BotCommand
 import com.github.kotlintelegrambot.entities.Chat
 import com.github.kotlintelegrambot.entities.ChatAction
@@ -44,8 +47,9 @@ import java.io.File as SystemFile
 
 fun bot(body: Bot.Builder.() -> Unit): Bot = Bot.Builder().build(body)
 
-fun Bot.Builder.dispatch(body: Dispatcher.() -> Unit) {
-    dispatcherConfiguration = body
+@Suppress("UNCHECKED_CAST")
+fun <T> Bot.Builder.dispatch(body: Dispatcher<T>.() -> Unit) {
+    dispatcherConfiguration = body as Dispatcher<ChatContext>.() -> Unit
 }
 
 fun Bot.Builder.webhook(
@@ -58,7 +62,7 @@ fun Bot.Builder.webhook(
 
 class Bot private constructor(
     private val updater: Updater,
-    private val dispatcher: Dispatcher,
+    private val dispatcher: Dispatcher<ChatContext>,
     private val updatesChannel: Channel<DispatchableObject>,
     private val updateMapper: UpdateMapper,
     private val webhookConfig: WebhookConfig?,
@@ -78,17 +82,19 @@ class Bot private constructor(
         var apiUrl: String = "https://api.telegram.org/"
         var logLevel: LogLevel = LogLevel.None
         var proxy: Proxy = Proxy.NO_PROXY
-        internal var dispatcherConfiguration: Dispatcher.() -> Unit = { }
+        internal var dispatcherConfiguration: Dispatcher<ChatContext>.() -> Unit = { }
+        var chatContextProvider: ChatContextProvider = EmptyChatContextProvider()
 
         fun build(): Bot {
             val updatesQueue = Channel<DispatchableObject>()
             val looper = CoroutineLooper(Dispatchers.IO)
             val apiClient = ApiClient(token, apiUrl, timeout, logLevel, proxy, gson)
             val updater = Updater(looper, updatesQueue, apiClient, timeout)
-            val dispatcher = Dispatcher(
+            val dispatcher = Dispatcher<ChatContext>(
                 updatesChannel = updatesQueue,
                 logLevel = logLevel,
                 coroutineDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher(),
+                chatContextProvider = chatContextProvider,
             ).apply(dispatcherConfiguration)
 
             return Bot(
