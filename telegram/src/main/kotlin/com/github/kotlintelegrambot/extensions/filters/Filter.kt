@@ -1,8 +1,7 @@
 package com.github.kotlintelegrambot.extensions.filters
 
 import com.github.kotlintelegrambot.dispatcher.ChatContext
-import com.github.kotlintelegrambot.entities.Update
-import com.github.kotlintelegrambot.entities.chat
+import com.github.kotlintelegrambot.entities.*
 
 interface Filter {
     fun checkFor(update: Update): Boolean = update.predicate()
@@ -39,23 +38,23 @@ interface Filter {
     }
 
     object Text : Filter {
-        override fun Update.predicate(): Boolean = message?.text != null && !message.text.startsWith("/")
+        override fun Update.predicate(): Boolean = text != null && !(text?.startsWith("/")?:false)
     }
 
     class TextIs(private val text: String) : Filter {
-        override fun Update.predicate(): Boolean = message?.text != null
-            && message.text == text
+        override fun Update.predicate(): Boolean = text != null
+            && text == this@TextIs.text
     }
 
     object Command : Filter {
-        override fun Update.predicate(): Boolean = message?.text != null && message.text.startsWith("/")
+        override fun Update.predicate(): Boolean = text != null && text?.startsWith("/")?:false
     }
 
     class CommandIs(
         private val command: String
     ) : Filter {
         override fun Update.predicate(): Boolean {
-            return message?.text != null && message.text.startsWith("/$command")
+            return text != null && text?.startsWith("/$command")?:false
         }
     }
 
@@ -100,27 +99,42 @@ interface Filter {
     }
 
     object Button : Filter {
-        override fun Update.predicate(): Boolean = callbackQuery?.data != null
+        override fun Update.predicate() = callbackQuery?.data != null
     }
 
     class Chat(private val chatId: Long) : Filter {
-        override fun Update.predicate(): Boolean = message?.chat?.id == this@Chat.chatId
+        override fun Update.predicate() = chatSafe?.id == this@Chat.chatId
+
     }
 
     class User(private val userId: Long) : Filter {
-        override fun Update.predicate(): Boolean = message?.from?.id == userId
+        override fun Update.predicate() = fromSafe?.id == this@User.userId
     }
 
     object Group : Filter {
-        override fun Update.predicate(): Boolean =
-            message?.chat?.type == "group" || message?.chat?.type == "supergroup"
+        override fun Update.predicate() = chatSafe?.type == "group" || chatSafe?.type == "supergroup"
     }
 
     object Private : Filter {
-        override fun Update.predicate(): Boolean = message?.chat?.type == "private"
+        override fun Update.predicate() = chatSafe?.type == "private"
     }
 
     object Channel : Filter {
-        override fun Update.predicate(): Boolean = chat.type == "channel"
+        override fun Update.predicate() = chatSafe?.type == "channel"
+
     }
 }
+
+private val Update.chatSafe
+    get() = try {
+        this.chat
+    } catch (e: Exception) {
+        null
+    }
+
+private val Update.fromSafe
+    get() = try {
+        this.from
+    } catch (e: Exception) {
+        null
+    }

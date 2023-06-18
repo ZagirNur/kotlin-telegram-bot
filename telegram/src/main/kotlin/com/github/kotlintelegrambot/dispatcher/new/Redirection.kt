@@ -1,9 +1,6 @@
 package com.github.kotlintelegrambot.dispatcher.new
 
-import com.github.kotlintelegrambot.entities.CallbackQuery
-import com.github.kotlintelegrambot.entities.Message
-import com.github.kotlintelegrambot.entities.Update
-import com.github.kotlintelegrambot.entities.from
+import com.github.kotlintelegrambot.entities.*
 
 data class Redirection(
     val command: String? = null,
@@ -12,22 +9,25 @@ data class Redirection(
 
 fun buildRedirectedUpdate(update: Update): Update {
 
-    var newUpdate: Update? = null
-
     val redirection = update.redirectAndClear()
-    if (redirection.command != null) {
 
+    var newUpdate: Update? = null
+    val newMessage =
+        update.message ?: update.callbackQuery?.message ?: Message(
+            text = "/${redirection.command}",
+            from = update.from,
+            chat = update.chat,
+            date = System.currentTimeMillis(),
+            messageId = update.messageId ?: 0,
+        ).copy(
+            text = "/${redirection.command}",
+            from = update.from,
+            chat = update.chat
+        )
+
+    if (redirection.command != null) {
         newUpdate = update.copy(
-            message = update.message?.copy(
-                text = "/${redirection.command}",
-                from = update.from
-            ) ?: Message(
-                text = "/${redirection.command}",
-                from = update.from,
-                chat = update.callbackQuery?.message?.chat!!,
-                date = update.callbackQuery.message.date,
-                messageId = update.callbackQuery.message.messageId
-            ),
+            message = newMessage,
             callbackQuery = null
         )
     }
@@ -41,6 +41,7 @@ fun buildRedirectedUpdate(update: Update): Update {
                 id = "",
                 data = redirection.buttonData,
                 from = update.from,
+                message = newMessage,
                 chatInstance = update.callbackQuery?.chatInstance ?: "",
             )
         )
@@ -52,6 +53,8 @@ fun buildRedirectedUpdate(update: Update): Update {
         throw IllegalStateException("Invalid redirection: $redirection")
     }
     newUpdate.redirectAndClear()
+    newUpdate.redirectionPrefix(update.redirectionPrefix())
+    newUpdate.withChatContextSource(update.chatContextSource())
     return newUpdate
 }
 

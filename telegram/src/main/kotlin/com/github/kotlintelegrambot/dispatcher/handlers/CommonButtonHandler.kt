@@ -33,13 +33,8 @@ internal class CommonButtonHandler<T : ChatContext, A>(
 }
 
 
-data class UpdateButtonContext<T : ChatContext, D>(
-    val bot: Bot,
-    val update: Update,
+class UpdateButtonContext<T : ChatContext, D>(
+    bot: Bot,
+    update: Update,
     val btnData: D,
-    val ctx: T = update.chatContextSource().getChatContext(),
-) {
-    fun redirectTo(command: String? = null, buttonData: String? = null) {
-        update.redirectTo(command, buttonData)
-    }
-}
+) : UpdateContext<T>(bot, update)

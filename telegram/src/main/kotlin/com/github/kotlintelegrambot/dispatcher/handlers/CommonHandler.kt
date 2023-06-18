@@ -17,7 +17,7 @@ internal class CommonHandler<T : ChatContext>(
     }
 }
 
-data class UpdateContext<T : ChatContext>(
+open class UpdateContext<T : ChatContext>(
     val bot: Bot,
     val update: Update,
 ) {

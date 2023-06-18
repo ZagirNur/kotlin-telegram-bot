@@ -25,7 +25,8 @@ open class Dispatcher<Ctx> internal constructor(
     private val errorHandlers = arrayListOf<ErrorHandler>()
 
     private val scope: CoroutineScope = CoroutineScope(coroutineDispatcher)
-    @Volatile private var job: Job? = null
+    @Volatile
+    private var job: Job? = null
 
     internal fun startCheckingUpdates() {
         job?.cancel()
@@ -35,7 +36,19 @@ open class Dispatcher<Ctx> internal constructor(
     private suspend fun checkQueueUpdates() {
         while (true) {
             when (val item = updatesChannel.receive()) {
-                is Update -> handleUpdate(item)
+                is Update -> {
+                    val chatStateProvider = wrapAsChatContextSource(item, chatContextProvider)
+                    item.withChatContextSource(chatStateProvider)
+                    try {
+                        handleUpdate(item)
+                        if (!item.consumed) {
+                            println("HANDLER NOT FOUND FOR UPDATE: $item")
+                        }
+                    } catch (e: Exception) {
+                        println("EXCEPTION IN HANDLER: $e")
+                    }
+                }
+
                 is TelegramError -> handleError(item)
                 else -> Unit
             }
@@ -84,17 +97,17 @@ open class Dispatcher<Ctx> internal constructor(
 
     private suspend fun handleUpdate(update: Update) {
 
-        val chatStateProvider = wrapAsChatContextSource(update, chatContextProvider)
-        update.withChatContextSource(chatStateProvider)
 
         commandHandlers
             .asSequence()
             .filter { !update.consumed }
-            .filter { it.checkUpdate(update) }
+            .filter {
+                it.checkUpdate(update)
+            }
             .forEach {
                 try {
                     it.handleUpdate(bot, update)
-                    chatStateProvider.flush()
+                    update.chatContextSource().flush()
 
                     if (update.hasRedirection()) {
                         handleUpdate(buildRedirectedUpdate(update))

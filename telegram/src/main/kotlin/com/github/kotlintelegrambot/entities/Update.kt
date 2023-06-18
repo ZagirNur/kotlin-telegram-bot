@@ -24,10 +24,12 @@ data class Update constructor(
     @Name("pre_checkout_query") val preCheckoutQuery: PreCheckoutQuery? = null,
     @Name("poll") val poll: Poll? = null,
     @Name("poll_answer") val pollAnswer: PollAnswer? = null,
+    @Name("my_chat_member") val myChatMember: ChatMemberUpdated? = null,
 ) : DispatchableObject, ConsumableObject() {
     private var chatContextSource: ChatContextSource = EmptyChatContextSource()
     private var redirection: Redirection? = null
     private var redirected: Boolean = false
+    private var redirectinPrefix: String = ""
 
     fun withChatContextSource(contextSource: ChatContextSource): Update {
         this.chatContextSource = contextSource
@@ -59,7 +61,39 @@ data class Update constructor(
         return redirection ?: Redirection()
     }
 
+    fun redirectionPrefix(prefix: String) {
+        if (prefix == null) {
+            redirectinPrefix = ""
+        }
+        redirectinPrefix = prefix
+    }
+
+    fun redirectionPrefix(): String {
+        if (redirectinPrefix == null) {
+            return ""
+        }
+        return redirectinPrefix
+    }
+
 }
+
+data class ChatMemberUpdated constructor(
+    @Name("chat") val chat: Chat,
+    @Name("from") val from: User,
+    @Name("date") val date: Int,
+    @Name("old_chat_member") val oldChatMember: ChatMember,
+    @Name("new_chat_member") val newChatMember: ChatMember,
+    @Name("invite_link") val inviteLink: ChatInviteLink? = null,
+) : DispatchableObject, ConsumableObject()
+
+data class ChatInviteLink constructor(
+    @Name("invite_link") val inviteLink: String,
+    @Name("creator") val creator: User,
+    @Name("is_primary") val isPrimary: Boolean,
+    @Name("is_revoked") val isRevoked: Boolean,
+    @Name("expire_date") val expireDate: Int? = null,
+    @Name("member_limit") val memberLimit: Int? = null,
+) : DispatchableObject, ConsumableObject()
 
 /**
  * Generate list of key-value from start payload.
@@ -91,6 +125,13 @@ val Update.messageId
             ?: editedChannelPost?.messageId
             ?: callbackQuery?.message?.messageId
 
+val Update.text
+    get() = message?.text
+        ?: editedMessage?.text
+        ?: channelPost?.text
+        ?: editedChannelPost?.text
+        ?: pollAnswer?.pollId
+
 val Update.fromUsername
     get() = from.username
 
@@ -118,6 +159,7 @@ val Update.chat
             ?: channelPost?.chat
             ?: editedChannelPost?.chat
             ?: callbackQuery?.message?.chat
+            ?: myChatMember?.chat
             ?: throw IllegalStateException("Update has no chat id, update: $this")
 
 
