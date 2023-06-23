@@ -46,6 +46,7 @@ open class Dispatcher<Ctx> internal constructor(
                         }
                     } catch (e: Exception) {
                         println("EXCEPTION IN HANDLER: $e")
+                        e.printStackTrace()
                     }
                 }
 

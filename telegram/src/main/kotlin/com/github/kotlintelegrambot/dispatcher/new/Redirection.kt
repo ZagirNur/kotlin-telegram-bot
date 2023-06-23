@@ -13,21 +13,17 @@ fun buildRedirectedUpdate(update: Update): Update {
 
     var newUpdate: Update? = null
     val newMessage =
-        update.message ?: update.callbackQuery?.message ?: Message(
-            text = "/${redirection.command}",
+        update.message ?: Message(
+            text = "",
             from = update.from,
             chat = update.chat,
             date = System.currentTimeMillis(),
             messageId = update.messageId ?: 0,
-        ).copy(
-            text = "/${redirection.command}",
-            from = update.from,
-            chat = update.chat
         )
 
     if (redirection.command != null) {
         newUpdate = update.copy(
-            message = newMessage,
+            message = newMessage.copy(text = "/${redirection.command}"),
             callbackQuery = null
         )
     }

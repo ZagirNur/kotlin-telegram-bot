@@ -2,13 +2,28 @@
 
 package com.github.kotlintelegrambot.dispatcher.new
 
-import java.        lang.Long
+import org.omg.CORBA.Object
+import java.lang.Long
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentSkipListSet
+import kotlin.system.exitProcess
 
 class Action<T>(val actionCode: String, val clazz: Class<T>) {
+
+    init {
+        if (codes.put(actionCode, actionCode) != null) {
+            throw Error("Duplicate action code: $actionCode")
+        }
+    }
+
+    companion object {
+        private val codes = ConcurrentHashMap<String, String>()
+    }
+
 
     fun toString(data: T): String {
         val dataParts = clazz.declaredFields
@@ -44,6 +59,7 @@ class Action<T>(val actionCode: String, val clazz: Class<T>) {
                             dataParts[idx],
                             DateTimeFormatter.ofPattern("yyyyMMdd")
                         )
+
                         BigDecimal::class.java -> BigDecimal(dataParts[idx])
                         Int::class.java -> dataParts[idx].toInt()
                         Integer::class.java -> dataParts[idx].toInt()
@@ -57,5 +73,5 @@ class Action<T>(val actionCode: String, val clazz: Class<T>) {
         return (instance as T)
     }
 
-    fun Action<T>.data(buttonData: T) = toString(buttonData)
+    public fun Action<T>.data(buttonData: T) = toString(buttonData)
 }
