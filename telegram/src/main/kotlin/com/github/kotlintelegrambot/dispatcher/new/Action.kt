@@ -65,6 +65,7 @@ class Action<T>(val actionCode: String, val clazz: Class<T>) {
                         Int::class.java -> dataParts[idx].toInt()
                         Integer::class.java -> dataParts[idx].toInt()
                         Long::class.java -> dataParts[idx].toLong()
+                        java.lang.Boolean::class.java -> dataParts[idx] == "1"
                         Boolean::class.java -> dataParts[idx] == "1"
                         else -> dataParts[idx]
                     }
